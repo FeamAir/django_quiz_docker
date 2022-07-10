@@ -102,3 +102,6 @@ class Result(BaseModel):
 
     def points(self):
         return max(0, self.num_correct_answers - self.num_incorrect_answers)
+
+    def __str__(self):
+        return f'{self.user}: {self.exam} {self.num_correct_answers} {self.num_incorrect_answers}'
