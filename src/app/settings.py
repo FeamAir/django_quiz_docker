@@ -1,16 +1,21 @@
-import os
+from os import getenv
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+from celery.schedules import crontab
+
+from quiz.tasks import simple_task
+from quiz.tasks import send_email_report
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
 
-SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG') in ['True', 'TRUE', '1']
-ALLOWED_HOSTS = [el.strip() for el in os.getenv('ALLOWED_HOSTS').split()]
+SECRET_KEY = getenv('SECRET_KEY')
+DEBUG = getenv('DEBUG') in ['True', 'TRUE', '1']
+ALLOWED_HOSTS = [el.strip() for el in getenv('ALLOWED_HOSTS').split()]
 
 
 # Application definition
@@ -65,9 +70,13 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": 'django.db.backends.postgresql_psycopg2',
+        "HOST": getenv("POSTGRES_HOST"),
+        "PORT": getenv("POSTGRES_PORT"),
+        "NAME": getenv("POSTGRES_DB"),
+        "USER": getenv("POSTGRES_USER"),
+        "PASSWORD": getenv("POSTGRES_PASSWORD"),
     }
 }
 
@@ -126,3 +135,21 @@ DATE_FORMAT = 'd F Y'
 CKEDITOR_UPLOAD_PATH = 'uploads/'
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+SERVER_EMAIL = "noreply@test.com"
+ADMINS = [("admin", "admin@test.com"), ]
+
+CELERY_BROKER_URL = getenv("CELERY_BROKER")
+# CELERY_RESULT_BACKEND = getenv("CELERY_BACKEND")
+
+CELERY_BEAT_SCHEDULE = {
+    "simple_task": {
+        "task": "quiz.tasks.simple_task",
+        "schedule": crontab(minute="*/1"),
+    },
+    "send_email_report": {
+        "task": "quiz.tasks.send_email_report",
+        "schedule": crontab(minute="*/2"),
+    },
+}
